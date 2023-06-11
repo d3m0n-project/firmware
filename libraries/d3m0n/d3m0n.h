@@ -21,30 +21,20 @@
 
 // function type
 typedef void (*FunctionCallback)();
-FunctionCallback modulescall[] = {
-	&start_rfid, 
-	&start_infrared,
-	&start_wifi,
-	&start_keyboard,
-	&start_options,
-};
+FunctionCallback modulescall[] = {&start_rfid, &start_infrared,&start_wifi,&start_keyboard,&start_options};
 
-const char* modules[] = {
-	"RFID",
-	"INFRARED", 
-	"WIFI",
-	"KEYBOARD",
-	"OPTIONS"
-};
+char* modules1[] = {"> RFID","> INFRARED", "> WIFI","> KEYBOARD","> OPTIONS"};
+char* modules2[] = {"  RFID","  INFRARED", "  WIFI","  KEYBOARD","  OPTIONS"};
 
 void display2(String text, int line)
 {
 	lcd_setCursor(line, 0);
 	lcd_print(text.c_str());
-};
+}
 
 void d3m0n_begin()
 {
+	start_rfid();
 	//setup buttons
 	int button_up = 20;
 	int button_ok = 19;
@@ -57,13 +47,13 @@ void d3m0n_begin()
 	pinMode(button_ok, INPUT_PULLUP); 
 	pinMode(button_down, INPUT_PULLUP);
 	
-	if(sizeof(modules) > 0)
+	if(sizeof(modules1) > 0)
 	{
 		lcd_clear();
-		display2(strcat("> ",modules[0]), 0);
-		if (sizeof(modules) > 1)
+		display2(modules1[0], 0);
+		if (sizeof(modules1) > 1)
 		{
-			display2(strcat("  ",modules[1]), 1);
+			display2(modules2[1], 1);
 		}
 		else
 		{
@@ -73,7 +63,7 @@ void d3m0n_begin()
 		bool Firstline=true;
 		while(true)
 		{
-			if(digitalRead(button_down) == LOW && menu+1!=sizeof(modules))
+			if(digitalRead(button_down) == LOW && menu+1!=sizeof(modules1))
 			{
 				menu=menu+1;
 				
@@ -94,35 +84,35 @@ void d3m0n_begin()
 				}
 				
 				
-				//print("menu: "+str(menu)+"/total: "+str(sizeof(modules)))
+				//print("menu: "+str(menu)+"/total: "+str(sizeof(modules1)))
 				//print("ISfirst?: "+str(Firstline))
 				
 				
 				lcd_clear();
 				if(Firstline)
 				{
-					display2(strcat("> ",modules[menu]), 0);
-					if(menu+1==sizeof(modules))
+					display2(modules1[menu], 0);
+					if(menu+1==sizeof(modules1))
 					{
 						display2("                ", 1);
 					}
 					else
 					{
-						display2(strcat("  ",modules[menu+1]), 1);
+						display2(modules2[menu+1], 1);
 					}
 					Firstline=false;
 				}
 				else
 				{
-					display2(strcat("  ",modules[menu-1]), 0);
-					if(menu==sizeof(modules))
+					display2(modules2[menu-1], 0);
+					if(menu==sizeof(modules1))
 					{
-						display2(strcat("> ",modules[menu-1]), 0);
+						display2(modules1[menu-1], 0);
 						display2("                ", 1);
 					}
 					else
 					{
-						display2(strcat("> ",modules[menu]), 1);
+						display2(modules1[menu], 1);
 					}
 					Firstline=true;
 				}
@@ -142,33 +132,33 @@ void d3m0n_begin()
 					menu=menu-1;
 				}
 				
-				//print("menu: "+str(menu)+"/total: "+str(sizeof(modules)))
+				//print("menu: "+str(menu)+"/total: "+str(sizeof(modules1)))
 				//print("ISfirst?: "+str(Firstline))
 				
 				lcd_clear();
 				if(Firstline)
 				{
-					display2(strcat("> ",modules[menu]), 0);
-					if(menu+2>sizeof(modules))
+					display2(modules1[menu], 0);
+					if(menu+2>sizeof(modules1))
 					{
 						display2("                ", 1);
 					}
 					else
 					{
-						display2(strcat("  ",modules[menu+1]), 1);
+						display2(modules2[menu+1], 1);
 					}
 					Firstline=false;
 				}
 				else
 				{
-					display2(strcat("  ",modules[menu-1]), 0);
-					if(menu>sizeof(modules))
+					display2(modules2[menu-1], 0);
+					if(menu>sizeof(modules1))
 					{
 						display2("                ", 1);
 					}
 					else
 					{
-						display2(strcat("> ",modules[menu]), 1);
+						display2(modules1[menu], 1);
 					}
 					Firstline=true;
 				}
@@ -179,9 +169,9 @@ void d3m0n_begin()
 			}
 			if(digitalRead(button_ok) == LOW)
 			{
-				modulescall[menu];
+				modulescall[menu]();
 			}
 		}
 	}
-};
+}
 #endif
