@@ -16,15 +16,23 @@
 #include "rfid/rfid.h"
 #include "wifi/wifi.h"
 #include "options/options.h"
+#include "radio/radio.h"
+#include "custom/custom1.h"
+#include "custom/custom2.h"
+#include "custom/custom3.h"
 
-// Functions
+// Vars
+//setup buttons
+#define button_up 20
+#define button_ok 19
+#define button_down 18
 
 // function type
 typedef void (*FunctionCallback)();
-FunctionCallback modulescall[] = {&start_rfid, &start_infrared,&start_wifi,&start_keyboard,&start_options};
+FunctionCallback modulescall[] = {&start_rfid, &start_infrared,&start_wifi,&start_keyboard,&start_options, &start_options};
 
-char* modules1[] = {"> RFID","> INFRARED", "> WIFI","> KEYBOARD","> OPTIONS"};
-char* modules2[] = {"  RFID","  INFRARED", "  WIFI","  KEYBOARD","  OPTIONS"};
+char* modules1[] = {"> RFID","> INFRARED", "> WIFI","> KEYBOARD","> RADIO","> OPTIONS"};
+char* modules2[] = {"  RFID","  INFRARED", "  WIFI","  KEYBOARD","  RADIO","  OPTIONS"};
 
 void display2(String text, int line)
 {
@@ -33,13 +41,7 @@ void display2(String text, int line)
 }
 
 void d3m0n_begin()
-{
-	start_rfid();
-	//setup buttons
-	int button_up = 20;
-	int button_ok = 19;
-	int button_down = 18;
-	
+{	
 	lcd_setAddr(0x3f);
 	lcd_init(16, 17);
   
@@ -92,12 +94,14 @@ void d3m0n_begin()
 				if(Firstline)
 				{
 					display2(modules1[menu], 0);
-					if(menu+1==sizeof(modules1))
+					// if(menu+1==sizeof(modules1))
+					if(menu==sizeof(modules1))
 					{
 						display2("                ", 1);
 					}
 					else
 					{
+						// display2(modules2[menu+1], 1);
 						display2(modules2[menu+1], 1);
 					}
 					Firstline=false;
@@ -109,6 +113,7 @@ void d3m0n_begin()
 					{
 						display2(modules1[menu-1], 0);
 						display2("                ", 1);
+						// display2("                ", 1);
 					}
 					else
 					{
@@ -170,6 +175,8 @@ void d3m0n_begin()
 			if(digitalRead(button_ok) == LOW)
 			{
 				modulescall[menu]();
+				delay(1000);
+				break;
 			}
 		}
 	}

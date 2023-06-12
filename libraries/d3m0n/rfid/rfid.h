@@ -5,6 +5,10 @@
 
 #include "rfid.h"
 
+//setup buttons
+#define button_up 20
+#define button_ok 19
+#define button_down 18
 
 void display_rfid(String text, int line)
 {
@@ -15,9 +19,9 @@ void display_rfid(String text, int line)
 void start_rfid()
 {
 	//setup buttons
-	int button_up = 20;
-	int button_ok = 19;
-	int button_down = 18;
+	// button_up = 20;
+	// button_ok = 19;
+	// button_down = 18;
 	
 	
 	pinMode(button_up, INPUT_PULLUP); //up

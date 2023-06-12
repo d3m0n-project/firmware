@@ -5,6 +5,11 @@
 
 #include "options.h"
 
+//setup buttons
+#define button_up 20
+#define button_ok 19
+#define button_down 18
+
 void display_option(String text, int line)
 {
 	lcd_setCursor(line, 0);
@@ -14,9 +19,9 @@ void display_option(String text, int line)
 void start_options()
 {
 	//setup buttons
-	int button_up = 20;
-	int button_ok = 19;
-	int button_down = 18;
+	// button_up = 20;
+	// button_ok = 19;
+	// button_down = 18;
 	
 	pinMode(button_up, INPUT_PULLUP); //up
 	pinMode(button_ok, INPUT_PULLUP); //ok
