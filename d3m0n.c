@@ -7,9 +7,9 @@
 
 
 //setup buttons
-int button_up = 20;
-int button_ok = 19;
-int button_down = 18;
+#define button_up 20
+#define button_ok 19
+#define button_down 18
 
 char ssid[] = "D3M0N-X1";
 char pass[] = "changeme";
@@ -18,6 +18,19 @@ String ip_address;
 
 WiFiServer server(80);
 
+void display(String text, int line)
+{
+  lcd_setCursor(line, 0);
+  lcd_print(text.c_str());
+}
+
+String IpAddress2String(const IPAddress& ipAddress)
+{
+  return String(ipAddress[0]) + String(".") +\
+  String(ipAddress[1]) + String(".") +\
+  String(ipAddress[2]) + String(".") +\
+  String(ipAddress[3])  ; 
+}
 
 void setup() {
   Serial.begin(9600); 
@@ -122,25 +135,4 @@ void loop(){
     Serial.println("Client disconnected.");
     Serial.println("");
   }
-  if (digitalRead(button_down) == LOW) {
-    //Send the message
-    Keyboard.print("Hello");
-    while(digitalRead(button_ok) == LOW){
-      //do nothin
-    }
-  }
-}
-
-void display(String text, int line)
-{
-  lcd_setCursor(line, 0);
-  lcd_print(text.c_str());
-}
-
-String IpAddress2String(const IPAddress& ipAddress)
-{
-  return String(ipAddress[0]) + String(".") +\
-  String(ipAddress[1]) + String(".") +\
-  String(ipAddress[2]) + String(".") +\
-  String(ipAddress[3])  ; 
 }
