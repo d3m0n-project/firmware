@@ -1,28 +1,34 @@
+#pragma execution_character_set("utf-8")
+
 #include "Keyboard.h"
 #include <stdio.h>
 #include "i2c-display-lib.h"
 #include "d3m0n.h"
+#include "settings.h"
 #include <string.h>
 #include <WiFi.h>
+#include <time.h>
+
+const int _MISO = 0; //rx
+const int _MOSI = 7; //tx
+const int _CS = 5;   //csn
+const int _SCK = 6;  // SCK
+
+
+#include <SPI.h>
+#include <SD.h>
+
 
 
 //setup buttons
-#define button_up 20
-#define button_ok 19
-#define button_down 18
+#define button_up 22
+#define button_ok 21
+#define button_down 20
 
-char ssid[] = "D3M0N-X1";
-char pass[] = "changeme";
+char* ssid = "D3M0N-X1";
+char* pass = "changeme";
 String mac_address;
 String ip_address;
-
-WiFiServer server(80);
-
-void display(String text, int line)
-{
-  lcd_setCursor(line, 0);
-  lcd_print(text.c_str());
-}
 
 String IpAddress2String(const IPAddress& ipAddress)
 {
@@ -33,15 +39,62 @@ String IpAddress2String(const IPAddress& ipAddress)
 }
 
 void setup() {
-  Serial.begin(9600); 
-  Serial1.begin(9600);
-  Serial.print("yo");
+  //Serial.begin(9600);
+  //Serial.print("d3m0n serial");
+  char** test = Settings.splitFile("D3M0N_settings.txt", '\n');
+  Serial.print("test: ");
+  for(int i=0; i < sizeof(test); i++)
+  {
+    Serial.print(test[i]);
+    Serial.print(";");
+  }
   
-  //setup keyboard
-  Keyboard.begin();
+  Serial.println("");
+  
   //setup lcd display
   lcd_setAddr(0x3f);
   lcd_init(16, 17);
+  
+  SPI.setRX(_MISO);
+  SPI.setTX(_MOSI);
+  SPI.setSCK(_SCK);
+  
+  if (!SD.begin(_CS)) {
+    Settings.display("No SD card found", 0);
+    while(true)
+    {
+       if (SD.begin(_CS)) {
+        break;
+      }
+    }
+  }
+
+  if (SD.exists("log.txt")) {
+    SD.remove("log.txt");
+  }
+  
+  File logfile = SD.open("log.txt", FILE_WRITE);
+  logfile.println("                            ██████╗ ██████╗ ███╗   ███╗ ██████╗ ███╗   ██╗                            ");
+  logfile.println("                            ██╔══██╗╚════██╗████╗ ████║██╔═████╗████╗  ██║                            ");
+  logfile.println("                            ██║  ██║ █████╔╝██╔████╔██║██║██╔██║██╔██╗ ██║                            ");
+  logfile.println("                            ██║  ██║ ╚═══██╗██║╚██╔╝██║████╔╝██║██║╚██╗██║                            ");
+  logfile.println("                            ██████╔╝██████╔╝██║ ╚═╝ ██║╚██████╔╝██║ ╚████║                            ");
+  logfile.println("                            ╚═════╝ ╚═════╝ ╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═══╝");
+  logfile.println("                                         https://github.com/d3m0n-project");
+  logfile.println("                                           made with love by 4re5 group");
+  logfile.println("");
+  logfile.close();
+
+  
+  Settings.eventLog("Started successfully");
+
+  ssid = Settings.getSetting("ap_ssid");
+  //pass = Settings.getSetting("ap_password");
+  String temp2 = (String)"PASSWORD: "+(String)pass;
+  String temp1 = (String)"SSID: "+(String)ssid;
+  Settings.eventLog((char*)temp1.c_str());
+  Settings.eventLog((char*)temp2.c_str());
+  
 
   //setup ap
   WiFi.disconnect();
@@ -49,13 +102,12 @@ void setup() {
   boolean result = WiFi.softAP(ssid, pass);
   if(result){
     ip_address=IpAddress2String(WiFi.localIP());
-    display("IP address:", 0);
-    display(ip_address, 1);
+    Settings.display("IP address:", 0);
+    Settings.display(ip_address, 1);
     mac_address = WiFi.softAPmacAddress().c_str();
-    //setup server
-    server.begin(80);
   }else{
-    display("AP setup Failed", 0);
+    Settings.display("AP setup Failed", 0);
+    return;
   }
   
   pinMode(button_up, INPUT_PULLUP); //up
@@ -63,76 +115,16 @@ void setup() {
   pinMode(button_down, INPUT_PULLUP); //down
 
   delay(1000);
-  display("    D3M0N-X1    ", 0);
-  display("  by 4RE5 team  ", 1);
-  delay(2000);
+  Settings.display("    D3M0N-X1    ", 0);
+  Settings.display("  by 4RE5 team  ", 1);
+  char* startup_time = Settings.getSetting("startup_time"); 
+  float ftemp = atof(startup_time) * 1000;
+  delay(ftemp);
 
   d3m0n_begin();
 }
 
-void loop(){
- WiFiClient client = server.available();  // Listen for incoming clients
- String header;
- if (client) 
- {
-    String currentLine = "";               // make a String to hold incoming data from the client
-    while (client.connected()) {  // loop while the client's connected
-      if (client.available()) {  // if there's bytes to read from the client,
-        char c = client.read();  // read a byte, then
-        Serial.write(c);         // print it out the serial monitor
-        header += c;
-        if (c == '\n') {  // if the byte is a newline character
-          // if the current line is blank, you got two newline characters in a row.
-          // that's the end of the client HTTP request, so send a response:
-          if (currentLine.length() == 0) {
-            // HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
-            // and a content-type so the client knows what's coming, then a blank line:
-            client.println("HTTP/1.1 200 OK");
-            client.println("Content-type:text/html");
-            client.println("Connection: close");
-            client.println();
-            // turns the GPIOs on and off
-            if (header.indexOf("GET /LED_BUILTIN/ON") >= 0) 
-            {
-              Serial.println("LED_BUILTIN ON");
-            } 
-            else if (header.indexOf("GET /LED_BUILTIN/OFF") >= 0) 
-            {
-              Serial.println("LED_BUILTIN OFF");
-            }
-            // Display the HTML web page
-            client.println("<!DOCTYPE html><html>");
-            client.println("<head> <title>Pico W Web Server</title> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
-            client.println("<link rel=\"icon\" href=\"data:,\">");
-            // CSS to style the on/off buttons
-            // Feel free to change the background-color and font-size attributes to fit your preferences
-            client.println("<style>html {font-family: Helvetica; display:inline-block; margin: 0px auto; text-align: center;}");
-            client.println(" h1{color: #0F3376; padding: 2vh;} p{font-size: 1.5rem;}");
-            client.println(".button{background-color: #4286f4; display: inline-block; border: none; border-radius: 4px; color: white; padding: 16px 40px;text-decoration: none; font-size: 30px; margin: 2px; cursor: pointer;}");
-            client.println(".button2{background-color: #4286f4;display: inline-block; border: none; border-radius: 4px; color: white; padding: 16px 40px;text-decoration: none; font-size: 30px; margin: 2px; cursor: pointer;}</style></head>");
-            // Web Page Heading
-            client.println("<body><h1>Pico W Web Server</h1>");
-            client.println("<p>GPIO state: null</p>");
-            client.println("<p><a href=\"/LED_BUILTIN/ON\"><button class=\"button button2\">ON</button></a></p>");
-            client.println("<p><a href=\"/LED_BUILTIN/OFF\"><button class=\"button button2\">OFF</button></a></p>");
-            client.println("</body></html>");
-            // The HTTP response ends with another blank line
-            client.println();
-            // Break out of the while loop
-            break;
-          } else {  // if you got a newline, then clear currentLine
-            currentLine = "";
-          }
-        } else if (c != '\r') {  // if you got anything else but a carriage return character,
-          currentLine += c;      // add it to the end of the currentLine
-        }
-      }
-    }
-    // Clear the header variable
-    header = "";
-    // Close the connection
-    client.stop();
-    Serial.println("Client disconnected.");
-    Serial.println("");
-  }
+void loop()
+{
+  // nothing
 }
