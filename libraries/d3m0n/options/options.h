@@ -6,9 +6,9 @@
 #include "options.h"
 
 //setup buttons
-#define button_up 20
-#define button_ok 19
-#define button_down 18
+#define button_up 22
+#define button_ok 21
+#define button_down 20
 
 void display_option(String text, int line)
 {
@@ -18,6 +18,7 @@ void display_option(String text, int line)
 
 void start_options()
 {
+	#define FINISHED 1
 	//setup buttons
 	// button_up = 20;
 	// button_ok = 19;
@@ -37,6 +38,6 @@ void start_options()
 	display_option("options", 0);
 	
 	delay(2000);
-	return;
+	#define FINISHED 0
 }
 #endif

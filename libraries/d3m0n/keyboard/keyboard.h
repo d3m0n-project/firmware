@@ -8,9 +8,9 @@
 #include "Keyboard.h"
 
 //setup buttons
-#define button_up 20
-#define button_ok 19
-#define button_down 18
+#define button_up 22
+#define button_ok 21
+#define button_down 20
 
 void display_keyboard(String text, int line)
 {
@@ -21,8 +21,9 @@ void display_keyboard(String text, int line)
 void script_to_key(char* expression, char* after="")
 {
     if(expression == "STRING")    	Keyboard.print(after);
-    if(expression == "GUI")     	Keyboard.press(KEY_LEFT_GUI); if(after!="") Keyboard.print(after);
-    if(expression == "DELAY")  		delay((int)after);
+    if(expression == "GUI r")     	Keyboard.press(KEY_LEFT_GUI); Keyboard.press('r');
+    if(expression == "GUI")     	Keyboard.press(KEY_LEFT_GUI);
+    if(expression == "DELAY")  		delay((int)after/1000);
     if(expression == "ENTER") 		Keyboard.press(KEY_RETURN);
     if(expression == "CTRL") 		Keyboard.press(KEY_LEFT_CTRL);
     if(expression == "ALT") 		Keyboard.press(KEY_LEFT_ALT); 
@@ -50,9 +51,6 @@ void keyboard_badUSB(char* payload)
 		{
 			//Send the message
 			Keyboard.print("Hello");
-			while(digitalRead(button_ok) == LOW){
-			  //do nothin
-			}
 			break;
 		}
 	}
@@ -66,9 +64,6 @@ void keyboard_keylogger()
 		{
 			//Send the message
 			Keyboard.print("Hello");
-			while(digitalRead(button_ok) == LOW){
-			  //do nothin
-			}
 		}
 	}
 }
@@ -102,6 +97,7 @@ void select_keyboard_menu(int menu)
 
 void start_keyboard()
 {
+	#define FINISHED 1
 	pinMode(button_up, INPUT_PULLUP); //up
 	pinMode(button_ok, INPUT_PULLUP); //ok
 	pinMode(button_down, INPUT_PULLUP); //down
@@ -145,6 +141,6 @@ void start_keyboard()
 		}
 	}
 	
-	return;
+	#define FINISHED 0
 }
 #endif

@@ -6,7 +6,11 @@
 #include "hardware/i2c.h"
 #include "pico/binary_info.h"
 #include "d3m0n.h"
+#include "settings.h"
+#include "server.h"
 #include <string.h>
+#include <SPI.h>
+#include <SD.h>
 #include "i2c-display-lib.h"
 
 
@@ -23,9 +27,15 @@
 
 // Vars
 //setup buttons
-#define button_up 20
-#define button_ok 19
-#define button_down 18
+#define button_up 22
+#define button_ok 21
+#define button_down 20
+const int _MISO_pin = 0; //rx
+const int _MOSI_pin = 7; //tx
+const int _CS_pin = 5;   //csn
+const int _SCK_pin = 6;  // SCK
+
+#define FINISHED 0
 
 // function type
 typedef void (*FunctionCallback)();
@@ -34,38 +44,36 @@ FunctionCallback modulescall[] = {&start_rfid, &start_infrared,&start_wifi,&star
 char* modules1[] = {"> RFID","> INFRARED", "> WIFI","> KEYBOARD","> RADIO","> OPTIONS"};
 char* modules2[] = {"  RFID","  INFRARED", "  WIFI","  KEYBOARD","  RADIO","  OPTIONS"};
 
-void display2(String text, int line)
-{
-	lcd_setCursor(line, 0);
-	lcd_print(text.c_str());
-}
 
 void d3m0n_begin()
 {	
-	lcd_setAddr(0x3f);
-	lcd_init(16, 17);
-  
-	pinMode(button_up, INPUT_PULLUP); 
-	pinMode(button_ok, INPUT_PULLUP); 
-	pinMode(button_down, INPUT_PULLUP);
-	
-	if(sizeof(modules1) > 0)
+	SPI.setRX(_MISO_pin);
+	SPI.setTX(_MOSI_pin);
+	SPI.setSCK(_SCK_pin);
+	  
+	if (!SD.begin(_CS_pin)) {
+	  Settings.display("No SD card found", 0);
+	  return;
+	}
+	d3m0n_server.start();
+
+	if(Settings.getLength(modules1) > 0)
 	{
 		lcd_clear();
-		display2(modules1[0], 0);
-		if (sizeof(modules1) > 1)
+		Settings.display(modules1[0], 0);
+		if (Settings.getLength(modules1) > 1)
 		{
-			display2(modules2[1], 1);
+			Settings.display(modules2[1], 1);
 		}
 		else
 		{
-			display2("                ", 1);
+			Settings.display("                ", 1);
 		}
 		int menu=0;
 		bool Firstline=true;
 		while(true)
 		{
-			if(digitalRead(button_down) == LOW && menu+1!=sizeof(modules1))
+			if(digitalRead(button_down) == LOW && menu!=Settings.getLength(modules1)-3 && FINISHED == 0)
 			{
 				menu=menu+1;
 				
@@ -93,31 +101,31 @@ void d3m0n_begin()
 				lcd_clear();
 				if(Firstline)
 				{
-					display2(modules1[menu], 0);
+					Settings.display(modules1[menu], 0);
 					// if(menu+1==sizeof(modules1))
-					if(menu==sizeof(modules1))
+					if(menu==Settings.getLength(modules1))
 					{
-						display2("                ", 1);
+						Settings.display("                ", 1);
 					}
 					else
 					{
-						// display2(modules2[menu+1], 1);
-						display2(modules2[menu+1], 1);
+						// Settings.display(modules2[menu+1], 1);
+						Settings.display(modules2[menu+1], 1);
 					}
 					Firstline=false;
 				}
 				else
 				{
-					display2(modules2[menu-1], 0);
-					if(menu==sizeof(modules1))
+					Settings.display(modules2[menu-1], 0);
+					if(menu==Settings.getLength(modules1))
 					{
-						display2(modules1[menu-1], 0);
-						display2("                ", 1);
-						// display2("                ", 1);
+						Settings.display(modules1[menu-1], 0);
+						Settings.display("                ", 1);
+						// Settings.display("                ", 1);
 					}
 					else
 					{
-						display2(modules1[menu], 1);
+						Settings.display(modules1[menu], 1);
 					}
 					Firstline=true;
 				}
@@ -126,7 +134,7 @@ void d3m0n_begin()
 					delay(0);
 				}
 			}
-			if(digitalRead(button_up) == LOW)
+			if(digitalRead(button_up) == LOW && FINISHED == 0 && menu != 0)
 			{
 				if(menu==0)
 				{
@@ -143,41 +151,41 @@ void d3m0n_begin()
 				lcd_clear();
 				if(Firstline)
 				{
-					display2(modules1[menu], 0);
-					if(menu+2>sizeof(modules1))
+					Settings.display(modules1[menu], 0);
+					if(menu+2>Settings.getLength(modules1))
 					{
-						display2("                ", 1);
+						Settings.display("                ", 1);
 					}
 					else
 					{
-						display2(modules2[menu+1], 1);
+						Settings.display(modules2[menu+1], 1);
 					}
 					Firstline=false;
 				}
 				else
 				{
-					display2(modules2[menu-1], 0);
-					if(menu>sizeof(modules1))
+					Settings.display(modules2[menu-1], 0);
+					if(menu>Settings.getLength(modules1))
 					{
-						display2("                ", 1);
+						Settings.display("                ", 1);
 					}
 					else
 					{
-						display2(modules1[menu], 1);
+						Settings.display(modules1[menu], 1);
 					}
 					Firstline=true;
 				}
-				while (digitalRead(button_up) == LOW)
+				while (digitalRead(button_up) == LOW && FINISHED == 0)
 				{
 					delay(0);
 				}
 			}
-			if(digitalRead(button_ok) == LOW)
+			if(digitalRead(button_ok) == LOW && FINISHED == 0)
 			{
+				#define FINISHED 1
 				modulescall[menu]();
-				delay(1000);
-				break;
 			}
+			d3m0n_server.handle();
 		}
 	}
 }
